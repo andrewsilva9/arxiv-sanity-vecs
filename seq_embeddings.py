@@ -4,7 +4,6 @@ import pickle
 from sentence_transformers.util import semantic_search
 from sentence_transformers import SentenceTransformer
 import torch
-from datasets import load_dataset
 from typing import Mapping
 import requests
 import numpy as np
@@ -101,8 +100,8 @@ def embedding_from_string(
     cache_key = f'{string}'
     if cache_key not in cache_in.keys():
         cache_in[cache_key] = query_for_embedding(string)
-        with open(embedding_cache_path, "wb") as cache_fn:
-            pickle.dump(cache_in, cache_fn)
+        with open(cache_fn, "wb") as cache_f:
+            pickle.dump(cache_in, cache_f)
     return cache_in[cache_key], cache_in
 
 
