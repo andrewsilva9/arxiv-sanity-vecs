@@ -180,7 +180,8 @@ def get_recommendations_embed(
         comparison_embeddings,
         query_embeddings,
 ):
-    hits = semantic_search(torch.from_numpy(query_embeddings), torch.from_numpy(np.array(comparison_embeddings)),
+    hits = semantic_search(torch.from_numpy(query_embeddings).to(dtype=torch.float),
+                           torch.from_numpy(np.array(comparison_embeddings)).to(dtype=torch.float),
                            top_k=len(comparison_embeddings))
     return hits[0]
 
