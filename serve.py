@@ -14,7 +14,6 @@ import pickle
 from random import shuffle
 
 import numpy as np
-from sklearn import svm
 
 from flask import Flask, request, redirect, url_for
 from flask import render_template
@@ -156,58 +155,6 @@ def dot_product_rank(pid=None):
     return papers, scores
 
 
-def svm_rank(tags: str = '', pid: str = '', C: float = 0.01):
-    # tag can be one tag or a few comma-separated tags or 'all' for all tags we have in db
-    # pid can be a specific paper id to set as positive for a kind of nearest neighbor search
-    if not (tags or pid):
-        return [], [], []
-
-    # load all of the features
-    features = load_features()
-    x, pids = features['x'], features['pids']
-    n, d = x.shape
-    ptoi, itop = {}, {}
-    for i, p in enumerate(pids):
-        ptoi[p] = i
-        itop[i] = p
-
-    # construct the positive set
-    y = np.zeros(n, dtype=np.float32)
-    if pid:
-        y[ptoi[pid]] = 1.0
-    elif tags:
-        tags_db = get_tags()
-        tags_filter_to = tags_db.keys() if tags == 'all' else set(tags.split(','))
-        for tag, pids in tags_db.items():
-            if tag in tags_filter_to:
-                for pid in pids:
-                    y[ptoi[pid]] = 1.0
-
-    if y.sum() == 0:
-        return [], [], [] # there are no positives?
-
-    # classify
-    clf = svm.LinearSVC(class_weight='balanced', verbose=False, max_iter=10000, tol=1e-6, C=C)
-    clf.fit(x, y)
-    s = clf.decision_function(x)
-    sortix = np.argsort(-s)
-    pids = [itop[ix] for ix in sortix]
-    scores = [100*float(s[ix]) for ix in sortix]
-
-    # get the words that score most positively and most negatively for the svm
-    ivocab = {v:k for k,v in features['vocab'].items()} # index to word mapping
-    weights = clf.coef_[0] # (n_features,) weights of the trained svm
-    sortix = np.argsort(-weights)
-    words = []
-    for ix in list(sortix[:40]) + list(sortix[-20:]):
-        words.append({
-            'word': ivocab[ix],
-            'weight': weights[ix],
-        })
-
-    return pids, scores, words
-
-
 def search_rank(q: str = ''):
     if not q:
         return [], [] # no query? no results
@@ -256,28 +203,17 @@ def main():
     opt_pid = request.args.get('pid', '')  # pid to find nearest neighbors to
     opt_time_filter = request.args.get('time_filter', default_time_filter) # number of days to filter by
     opt_skip_have = request.args.get('skip_have', default_skip_have) # hide papers we already have?
-    opt_svm_c = request.args.get('svm_c', '') # svm C parameter
     opt_page_number = request.args.get('page_number', '1') # page number for pagination
 
     # if a query is given, override rank to be of type "search"
     # this allows the user to simply hit ENTER in the search field and have the correct thing happen
     if opt_q:
         opt_rank = 'search'
-
-    # try to parse opt_svm_c into something sensible (a float)
-    try:
-        C = float(opt_svm_c)
-    except ValueError:
-        C = 0.01 # sensible default, i think
-
     # rank papers: by tags, by time, by random
     words = [] # only populated in the case of svm rank
     if opt_rank == 'search':
         pids, scores = search_rank(q=opt_q)
-    elif opt_rank == 'tags':
-        pids, scores, words = svm_rank(tags=opt_tags, C=C)
     elif opt_rank == 'pid':
-        # pids, scores, words = svm_rank(pid=opt_pid, C=C)
         pids, scores = dot_product_rank(pid=opt_pid)
     elif opt_rank == 'time':
         pids, scores = time_rank()
@@ -340,7 +276,6 @@ def main():
     context['gvars']['time_filter'] = opt_time_filter
     context['gvars']['skip_have'] = opt_skip_have
     context['gvars']['search_query'] = opt_q
-    context['gvars']['svm_c'] = str(C)
     context['gvars']['page_number'] = str(page_number)
     return render_template('index.html', **context)
 
