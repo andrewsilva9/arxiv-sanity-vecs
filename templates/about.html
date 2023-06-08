@@ -6,20 +6,22 @@
 {% block content %}
 <div id="aboutwrap">
     <div>
-        A much lighter-weight arxiv-sanity from-scratch re-write. Periodically polls arxiv API for new papers. Then allows users to tag papers of interest, and recommends new papers for each tag based on SVMs over tfidf features of paper abstracts. Allows one to search, rank, sort, slice and dice these results in a pretty web UI. Lastly, arxiv-sanity-lite can send you daily emails with recommendations of new papers based on your tags. Curate your tags, track recent papers in your area, and don't miss out!
+        A lighter-weight arxiv-sanity from-scratch re-write. Periodically polls arxiv API for new papers. Then allows users to like/dislike papers, and recommends similar papers based on sequence embeddings for abstracts/titles. You can also search for similar papers using sequence embeddings. Hopefully I will clean up the UI a bit in the future, to make it clearer when you've liked/disliked papers, and to let you view previously liked/disliked papers.
     </div>
 
     <br>
     <div>
         This particular instance indexes papers from cs.CV, cs.LG, cs.CL, cs.AI, cs.NE, cs.RO,
-        and only since early-ish 2021.
+        and only since early/mid-2023.
     </div>
 
     <br>
-    <div>The code for this website is open source at Github under <a href="https://github.com/karpathy/arxiv-sanity-lite">arxiv-sanity-lite</a>.</div>
+    <div>The code for this website is adapted from the open sourced code under <a href="https://github.com/karpathy/arxiv-sanity-lite">arxiv-sanity-lite</a>.</div>
 
     <br>
-    <div>Developed in spare time as a labor of love by <a href="https://twitter.com/karpathy">@karpathy</a>.</div>
+    <div>Adapted while procrastinating thesis-defense prep as a labor of anxiety <a href="https://twitter.com/andrewsilva9">@andrewsilva9</a>.
+
+        Originally developed in spare time as a labor of love by <a href="https://twitter.com/karpathy">@karpathy</a>.</div>
 </div>
 {% endblock %}
 
