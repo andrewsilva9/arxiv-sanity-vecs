@@ -23,7 +23,7 @@ var move_page = function(int_offset) {
 {% block content %}
 
 {% if not user %}
-<div id="log-fun-warn">(hi! just btw you have to be logged in to be able to add/delete/curate tags for papers and get recommendations)</div>
+<div id="log-fun-warn">(hi! just btw you have to be logged in to be able to like/dislike papers, get recommendations, or sort by "embed")</div>
 {% endif %}
 
 <div id="controls">
@@ -41,7 +41,9 @@ var move_page = function(int_offset) {
                 <select name="rank" id="rank_select">
                     <option value="search" {{ gvars.rank == 'search' and 'selected' }}>search</option>
 {#                    <option value="tags" {{ gvars.rank == 'tags' and 'selected' }}>tags</option>#}
+                    {% if user %}
                     <option value="embed" {{ gvars.rank == 'embed' and 'selected' }}>embed</option>
+                    {% endif %}
                     <option value="pid" {{ gvars.rank == 'pid' and 'selected' }}>pid</option>
                     <option value="time" {{ gvars.rank == 'time' and 'selected' }}>time</option>
                     <option value="random" {{ gvars.rank == 'random' and 'selected' }}>random</option>
