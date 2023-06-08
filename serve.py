@@ -7,23 +7,10 @@ ideas:
 - special single-image search just for paper similarity
 """
 
-import os
-import re
-import time
-import pickle
-from random import shuffle
-
-import numpy as np
-
 from flask import Flask, request, redirect, url_for
 from flask import render_template
 from flask import g # global session-level object
 from flask import session
-
-from aslite.db import get_papers_db, get_metas_db, get_tags_db, get_last_active_db, get_email_db, get_seen_db
-from aslite.db import load_features, load_users, save_users
-
-from seq_embeddings import get_recommendations_embed, init_user
 
 # -----------------------------------------------------------------------------
 # inits and globals
@@ -32,6 +19,19 @@ RET_NUM = 25 # number of papers to return per page
 ALPHA = 0.5  # learning rate for moving embeddings.
 
 app = Flask(__name__)
+
+from aslite.db import get_papers_db, get_metas_db, get_tags_db, get_last_active_db, get_email_db, get_seen_db
+from aslite.db import load_features, load_users, save_users
+
+from seq_embeddings import get_recommendations_embed, init_user
+
+import os
+import re
+import time
+import pickle
+from random import shuffle
+
+import numpy as np
 
 # set the secret key so we can cryptographically sign cookies and maintain sessions
 if os.path.isfile('secret_key.txt'):
