@@ -9,13 +9,13 @@ ideas:
 
 from flask import Flask, request, redirect, url_for
 from flask import render_template
-from flask import g # global session-level object
+from flask import g  # global session-level object
 from flask import session
 
 # -----------------------------------------------------------------------------
 # inits and globals
 
-RET_NUM = 25 # number of papers to return per page
+RET_NUM = 25  # number of papers to return per page
 ALPHA = 0.5  # learning rate for moving embeddings.
 
 app = Flask(__name__)
@@ -43,6 +43,7 @@ else:
     sk = 'devkey'
 app.secret_key = sk
 
+
 # -----------------------------------------------------------------------------
 # globals that manage the (lazy) loading of various state for a request
 
@@ -56,12 +57,17 @@ def get_tags():
     return g._tags
 
 
-def get_seen():
+def get_seen(dict_back=False):
     if g.user is None:
-        return {}
+        if dict_back:
+            return {'liked': [], 'disliked': []}
+        return []
     with get_seen_db() as seen_db:
-        seen_papers = seen_db[g.user] if g.user in seen_db else []
-    return seen_papers
+        seen_papers = seen_db[g.user] if g.user in seen_db else {'liked': [], 'disliked': []}
+    if dict_back:
+        return seen_papers
+    seen = seen_papers['liked'] + seen_papers['disliked']
+    return seen
 
 
 def get_papers():
@@ -69,10 +75,12 @@ def get_papers():
         g._pdb = get_papers_db()
     return g._pdb
 
+
 def get_metas():
     if not hasattr(g, '_mdb'):
         g._mdb = get_metas_db()
     return g._mdb
+
 
 @app.before_request
 def before_request():
@@ -84,6 +92,7 @@ def before_request():
         with get_last_active_db(flag='c') as last_active_db:
             last_active_db[g.user] = int(time.time())
 
+
 @app.teardown_request
 def close_connection(error=None):
     # close any opened database connections
@@ -91,6 +100,7 @@ def close_connection(error=None):
         g._pdb.close()
     if hasattr(g, '_mdb'):
         g._mdb.close()
+
 
 # -----------------------------------------------------------------------------
 # ranking utilities for completing the search/rank/filter requests
@@ -100,19 +110,23 @@ def render_pid(pid):
     # render a single paper with just the information we need for the UI
     pdb = get_papers()
     tags = get_tags()
+    seen = get_seen(dict_back=True)
+    print(seen)
     thumb_path = 'static/thumb/' + pid + '.jpg'
     thumb_url = thumb_path if os.path.isfile(thumb_path) else ''
     d = pdb[pid]
     return dict(
-        weight = 0.0,
-        id = d['_id'],
-        title = d['title'],
-        time = d['_time_str'],
-        authors = ', '.join(a['name'] for a in d['authors']),
-        tags = ', '.join(t['term'] for t in d['tags']),
-        utags = [t for t, pids in tags.items() if pid in pids],
-        summary = d['summary'],
-        thumb_url = thumb_url,
+        weight=0.0,
+        id=d['_id'],
+        title=d['title'],
+        time=d['_time_str'],
+        authors=', '.join(a['name'] for a in d['authors']),
+        tags=', '.join(t['term'] for t in d['tags']),
+        utags=[t for t, pids in tags.items() if pid in pids],
+        summary=d['summary'],
+        thumb_url=thumb_url,
+        liked=pid in seen['liked'],
+        disliked=pid in seen['disliked']
     )
 
 
@@ -129,7 +143,7 @@ def time_rank():
     ms = sorted(mdb.items(), key=lambda kv: kv[1]['_time'], reverse=True)
     tnow = time.time()
     pids = [k for k, v in ms]
-    scores = [(tnow - v['_time'])/60/60/24 for k, v in ms] # time delta in days
+    scores = [(tnow - v['_time']) / 60 / 60 / 24 for k, v in ms]  # time delta in days
     return pids, scores
 
 
@@ -157,8 +171,8 @@ def dot_product_rank(pid=None):
 
 def search_rank(q: str = ''):
     if not q:
-        return [], [] # no query? no results
-    qs = q.lower().strip().split() # split query by spaces and lowercase
+        return [], []  # no query? no results
+    qs = q.lower().strip().split()  # split query by spaces and lowercase
 
     pdb = get_papers()
     match = lambda s: sum(min(3, s.lower().count(qp)) for qp in qs)
@@ -177,6 +191,7 @@ def search_rank(q: str = ''):
     scores = [p[0] for p in pairs]
     return pids, scores
 
+
 # -----------------------------------------------------------------------------
 # primary application endpoints
 
@@ -189,7 +204,6 @@ def default_context():
 
 @app.route('/', methods=['GET'])
 def main():
-
     # default settings
     default_rank = 'time'
     default_tags = ''
@@ -197,20 +211,20 @@ def main():
     default_skip_have = 'no'
 
     # override variables with any provided options via the interface
-    opt_rank = request.args.get('rank', default_rank) # rank type. search|tags|embed|pid|time|random
-    opt_q = request.args.get('q', '') # search request in the text box
+    opt_rank = request.args.get('rank', default_rank)  # rank type. search|tags|embed|pid|time|random
+    opt_q = request.args.get('q', '')  # search request in the text box
     opt_tags = request.args.get('tags', default_tags)  # tags to rank by if opt_rank == 'tag'
     opt_pid = request.args.get('pid', '')  # pid to find nearest neighbors to
-    opt_time_filter = request.args.get('time_filter', default_time_filter) # number of days to filter by
-    opt_skip_have = request.args.get('skip_have', default_skip_have) # hide papers we already have?
-    opt_page_number = request.args.get('page_number', '1') # page number for pagination
+    opt_time_filter = request.args.get('time_filter', default_time_filter)  # number of days to filter by
+    opt_skip_have = request.args.get('skip_have', default_skip_have)  # hide papers we already have?
+    opt_page_number = request.args.get('page_number', '1')  # page number for pagination
 
     # if a query is given, override rank to be of type "search"
     # this allows the user to simply hit ENTER in the search field and have the correct thing happen
     if opt_q:
         opt_rank = 'search'
     # rank papers: by tags, by time, by random
-    words = [] # only populated in the case of svm rank
+    words = []  # only populated in the case of svm rank
     if opt_rank == 'search':
         pids, scores = search_rank(q=opt_q)
     elif opt_rank == 'pid':
@@ -222,24 +236,24 @@ def main():
     elif opt_rank == 'embed':
         pids, scores = dot_product_rank()
     else:
-        raise ValueError("opt_rank %s is not a thing" % (opt_rank, ))
+        raise ValueError("opt_rank %s is not a thing" % (opt_rank,))
 
     # filter by time
     if opt_time_filter:
         mdb = get_metas()
-        kv = {k:v for k,v in mdb.items()} # read all of metas to memory at once, for efficiency
+        kv = {k: v for k, v in mdb.items()}  # read all of metas to memory at once, for efficiency
         tnow = time.time()
-        deltat = int(opt_time_filter)*60*60*24 # allowed time delta in seconds
-        keep = [i for i,pid in enumerate(pids) if (tnow - kv[pid]['_time']) < deltat]
+        deltat = int(opt_time_filter) * 60 * 60 * 24  # allowed time delta in seconds
+        keep = [i for i, pid in enumerate(pids) if (tnow - kv[pid]['_time']) < deltat]
         pids, scores = [pids[i] for i in keep], [scores[i] for i in keep]
 
     # optionally hide papers we already have
     if opt_skip_have == 'yes':
         tags = get_tags()
         have = set().union(*tags.values())
-        seen = get_seen()
+        seen = list(set(get_seen()))
         seen.extend(have)
-        keep = [i for i,pid in enumerate(pids) if pid not in seen]
+        keep = [i for i, pid in enumerate(pids) if pid not in seen]
         pids, scores = [pids[i] for i in keep], [scores[i] for i in keep]
 
     # crop the number of results to RET_NUM, and paginate
@@ -247,8 +261,8 @@ def main():
         page_number = max(1, int(opt_page_number))
     except ValueError:
         page_number = 1
-    start_index = (page_number - 1) * RET_NUM # desired starting index
-    end_index = min(start_index + RET_NUM, len(pids)) # desired ending index
+    start_index = (page_number - 1) * RET_NUM  # desired starting index
+    end_index = min(start_index + RET_NUM, len(pids))  # desired ending index
     pids = pids[start_index:end_index]
     scores = scores[start_index:end_index]
 
@@ -259,7 +273,7 @@ def main():
 
     # build the current tags for the user, and append the special 'all' tag
     tags = get_tags()
-    rtags = [{'name':t, 'n':len(pids)} for t, pids in tags.items()]
+    rtags = [{'name': t, 'n': len(pids)} for t, pids in tags.items()]
     if rtags:
         rtags.append({'name': 'all'})
 
@@ -268,7 +282,8 @@ def main():
     context['papers'] = papers
     context['tags'] = rtags
     context['words'] = words
-    context['words_desc'] = "Here are the top 40 most positive and bottom 20 most negative weights of the SVM. If they don't look great then try tuning the regularization strength hyperparameter of the SVM, svm_c, above. Lower C is higher regularization."
+    context[
+        'words_desc'] = "Here are the top 40 most positive and bottom 20 most negative weights of the SVM. If they don't look great then try tuning the regularization strength hyperparameter of the SVM, svm_c, above. Lower C is higher regularization."
     context['gvars'] = {}
     context['gvars']['rank'] = opt_rank
     context['gvars']['tags'] = opt_tags
@@ -279,20 +294,20 @@ def main():
     context['gvars']['page_number'] = str(page_number)
     return render_template('index.html', **context)
 
+
 @app.route('/inspect', methods=['GET'])
 def inspect():
-
     # fetch the paper of interest based on the pid
     pid = request.args.get('pid', '')
     pdb = get_papers()
     if pid not in pdb:
-        return "error, malformed pid" # todo: better error handling
+        return "error, malformed pid"  # todo: better error handling
 
     # load the tfidf vectors, the vocab, and the idf table
     features = load_features()
     x = features['x']
     idf = features['idf']
-    ivocab = {v:k for k,v in features['vocab'].items()}
+    ivocab = {v: k for k, v in features['vocab'].items()}
     pix = features['pids'].index(pid)
     wixs = np.flatnonzero(np.asarray(x[pix].todense()))
     words = []
@@ -309,8 +324,10 @@ def inspect():
     context = default_context()
     context['paper'] = paper
     context['words'] = words
-    context['words_desc'] = "The following are the tokens and their (tfidf) weight in the paper vector. This is the actual summary that feeds into the SVM to power recommendations, so hopefully it is good and representative!"
+    context[
+        'words_desc'] = "The following are the tokens and their (tfidf) weight in the paper vector. This is the actual summary that feeds into the SVM to power recommendations, so hopefully it is good and representative!"
     return render_template('inspect.html', **context)
+
 
 @app.route('/profile')
 def profile():
@@ -320,11 +337,12 @@ def profile():
         context['email'] = email
     return render_template('profile.html', **context)
 
+
 @app.route('/stats')
 def stats():
     context = default_context()
     mdb = get_metas()
-    kv = {k:v for k,v in mdb.items()} # read all of metas to memory at once, for efficiency
+    kv = {k: v for k, v in mdb.items()}  # read all of metas to memory at once, for efficiency
     times = [v['_time'] for v in kv.values()]
     tstr = lambda t: time.strftime('%b %d %Y', time.localtime(t))
 
@@ -339,14 +357,16 @@ def stats():
     # count number of papers from various time deltas to now
     tnow = time.time()
     for thr in [1, 6, 12, 24, 48, 72, 96]:
-        context['thr_%d' % thr] = len([t for t in times if t > tnow - thr*60*60])
+        context['thr_%d' % thr] = len([t for t in times if t > tnow - thr * 60 * 60])
 
     return render_template('stats.html', **context)
+
 
 @app.route('/about')
 def about():
     context = default_context()
     return render_template('about.html', **context)
+
 
 # -----------------------------------------------------------------------------
 # tag related endpoints: add, delete tags for any paper
@@ -378,7 +398,8 @@ def add(pid=None, tag=None):
         tags_db[g.user] = d
 
     print("added paper %s to tag %s for user %s" % (pid, tag, g.user))
-    return "ok: " + str(d) # return back the user library for debugging atm
+    return "ok: " + str(d)  # return back the user library for debugging atm
+
 
 @app.route('/add_embed/<pid>')
 def add_embed(pid=None):
@@ -406,7 +427,7 @@ def move_for_embed(pid, move_away: bool = False):
     if move_away:
         user_embed -= ALPHA * (paper_features - user_embed)
     else:
-        user_embed += ALPHA * (paper_features-user_embed)
+        user_embed += ALPHA * (paper_features - user_embed)
     user_data[session['user']] = user_embed
     save_users(user_data)
     print(f'Moved {g.user} closer to paper {pid}')
@@ -414,17 +435,19 @@ def move_for_embed(pid, move_away: bool = False):
 
         # create the user if we don't know about them yet with an empty library
         if not g.user in seen_db:
-            seen_db[g.user] = []
+            seen_db[g.user] = {'liked': [], 'disliked': []}
 
         # fetch the user library object
         d = seen_db[g.user]
-
         # add the paper to the tag
-        d.append(pid)
-
+        if move_away and pid not in d['disliked']:
+            d['disliked'].append(pid)
+        elif pid not in d['liked']:
+            d['liked'].append(pid)
         # write back to database
-        seen_db[g.user] = list(set(d))
+        seen_db[g.user] = d
     return "ok"
+
 
 @app.route('/sub/<pid>/<tag>')
 def sub(pid=None, tag=None):
@@ -442,7 +465,7 @@ def sub(pid=None, tag=None):
 
         # add the paper to the tag
         if tag not in d:
-            return "user doesn't have the tag %s" % (tag, )
+            return "user doesn't have the tag %s" % (tag,)
         else:
             if pid in d[tag]:
 
@@ -458,6 +481,7 @@ def sub(pid=None, tag=None):
                 return "ok removed pid %s from tag %s" % (pid, tag)
             else:
                 return "user doesn't have paper %s in tag %s" % (pid, tag)
+
 
 @app.route('/del/<tag>')
 def delete_tag(tag=None):
@@ -481,18 +505,18 @@ def delete_tag(tag=None):
         tags_db[g.user] = d
 
     print("deleted tag %s for user %s" % (tag, g.user))
-    return "ok: " + str(d) # return back the user library for debugging atm
+    return "ok: " + str(d)  # return back the user library for debugging atm
+
 
 # -----------------------------------------------------------------------------
 # endpoints to log in and out
 
 @app.route('/login', methods=['POST'])
 def login():
-
     # the user is logged out but wants to log in, ok
     if g.user is None and request.form['username']:
         username = request.form['username']
-        if len(username) > 0: # one more paranoid check
+        if len(username) > 0:  # one more paranoid check
             session['user'] = username
             users = load_users()
             if username not in users:
@@ -500,10 +524,12 @@ def login():
                 save_users(users)
     return redirect(url_for('profile'))
 
+
 @app.route('/logout')
 def logout():
     session.pop('user', None)
     return redirect(url_for('profile'))
+
 
 # -----------------------------------------------------------------------------
 # user settings and configurations
@@ -515,7 +541,7 @@ def register_email():
     if g.user:
         # do some basic input validation
         proper_email = re.match(r'^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$', email, re.IGNORECASE)
-        if email == '' or proper_email: # allow empty email, meaning no email
+        if email == '' or proper_email:  # allow empty email, meaning no email
             # everything checks out, write to the database
             with get_email_db(flag='c') as edb:
                 edb[g.user] = email

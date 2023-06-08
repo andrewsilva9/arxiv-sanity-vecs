@@ -22,6 +22,8 @@ const Paper = props => {
     const subber = () => fetch("/sub/" + p.id + "/" + prompt("tag to subtract from this paper:"))
                         .then(response => console.log(response.text()));
     const utags = p.utags.map((utxt, ix) => <UTag key={ix} tag={utxt} />);
+    const liked = p.liked
+    const disliked = p.disliked
     const similar_url = "/?rank=pid&pid=" + p.id;
     const inspect_url = "/inspect?pid=" + p.id;
     const thumb_img = p.thumb_url === '' ? null : <div class='rel_img'><img src={p.thumb_url} /></div>;
@@ -32,11 +34,19 @@ const Paper = props => {
             <div class='rel_utags'>
                 {/*<div class="rel_utag rel_utag_add" onClick={adder}>+</div>*/}
                 {/*<div class="rel_utag rel_utag_sub" onClick={subber}>-</div>*/}
-                <div class="rel_utag rel_utag_add_embed" onClick={add_embed}>Like</div>
-                <div className="rel_utag rel_utag_sub_embed" onClick={sub_embed}>Dislike</div>
+                <button class="rel_utag rel_utag_add_embed" onClick={add_embed}>Like</button>
+                <button className="rel_utag rel_utag_sub_embed" onClick={sub_embed}>Dislike</button>
                 {utags}
             </div>
         )
+    }
+    let liked_statement = null;
+    let disliked_statement = null;
+    if(liked) {
+       liked_statement = (<div className="rel_utag rel_utag_add_embed" >Liked this paper</div>)
+    }
+    if(disliked) {
+        disliked_statement = (<div className="rel_utag rel_utag_sub_embed" >Disliked this paper</div>)
     }
 
     return (
@@ -47,6 +57,8 @@ const Paper = props => {
         <div class="rel_time">{p.time}</div>
         <div class='rel_tags'>{p.tags}</div>
         {utag_controls}
+        {liked_statement}
+        {disliked_statement}
         {thumb_img}
         <div class='rel_abs'>{p.summary}</div>
         <div class='rel_more'><a href={similar_url}>similar</a></div>
