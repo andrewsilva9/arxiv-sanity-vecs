@@ -111,7 +111,6 @@ def render_pid(pid):
     pdb = get_papers()
     tags = get_tags()
     seen = get_seen(dict_back=True)
-    print(seen)
     thumb_path = 'static/thumb/' + pid + '.jpg'
     thumb_url = thumb_path if os.path.isfile(thumb_path) else ''
     d = pdb[pid]
