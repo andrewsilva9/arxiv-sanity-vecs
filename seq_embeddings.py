@@ -210,7 +210,9 @@ if __name__ == "__main__":
 
         pdb = get_papers_db(flag='r')
 
-        strs = get_strings(num_back=-1, paper_database=pdb, key_dict=True)
+        # Use -1 for all papers, use 2500 to be sure that _at least_ the last 2500 were updated
+        # We may need to eventually recompute for all... that's a future problem!
+        strs = get_strings(num_back=2500, paper_database=pdb, key_dict=True)
 
         all_embeddings, embedding_cache = embedding_from_strings(strs,
                                                                  cache_fn=EMBEDDINGS_FILE,
