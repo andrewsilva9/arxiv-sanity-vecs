@@ -25,7 +25,7 @@ const Paper = props => {
     const liked = p.liked
     const disliked = p.disliked
     const similar_url = "/?rank=pid&pid=" + p.id;
-    const inspect_url = "/inspect?pid=" + p.id;
+    // const inspect_url = "/inspect?pid=" + p.id;
     const thumb_img = p.thumb_url === '' ? null : <div class='rel_img'><img src={p.thumb_url} /></div>;
     // if the user is logged in then we can show add/sub buttons
     let utag_controls = null;
@@ -62,7 +62,7 @@ const Paper = props => {
         {thumb_img}
         <div class='rel_abs'>{p.summary}</div>
         <div class='rel_more'><a href={similar_url}>similar</a></div>
-        <div class='rel_inspect'><a href={inspect_url}>inspect</a></div>
+        {/*<div class='rel_inspect'><a href={inspect_url}>inspect</a></div>*/}
     </div>
     )
 }
