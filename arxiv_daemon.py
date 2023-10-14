@@ -59,8 +59,8 @@ if __name__ == '__main__':
                 logging.warning(e)
                 logging.warning("will try again in a bit...")
                 ntried += 1
-                if ntried > 1000:
-                    logging.error("ok we tried 1,000 times, something is srsly wrong. exitting.")
+                if ntried > 100:
+                    logging.error("ok we tried 100 times, something is srsly wrong. exitting.")
                     sys.exit()
                 time.sleep(2 + random.uniform(0, 4))
 

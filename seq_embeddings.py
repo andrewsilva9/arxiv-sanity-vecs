@@ -50,11 +50,11 @@ def get_strings(num_back, paper_database, key_dict: bool = False):
     if num_back > -1 and num_back < len(paper_database):
         # crop to a random subset of papers
         paper_keys = list(paper_database.keys())
-        z = [[x, datetime.strptime(pdb[x]['updated'], '%Y-%m-%dT%H:%M:%SZ')] for x in paper_keys]
+        z = [[x, datetime.strptime(paper_database[x]['updated'], '%Y-%m-%dT%H:%M:%SZ')] for x in paper_keys]
         sorted_papers = sorted(z, key=lambda x: x[1])
         paper_keys = [x[0] for x in sorted_papers[-num_back:]]
     else:
-        paper_keys = list(pdb.keys())
+        paper_keys = list(paper_database.keys())
 
     data_back = []
     if key_dict:
