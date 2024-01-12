@@ -146,7 +146,7 @@ def time_rank():
     return pids, scores
 
 
-def dot_product_rank(pid=None):
+def dot_product_rank(pid=None, do_time_filter='', do_have_filter=''):
     # Compute similarity of user embedding to all paper embeddings
     if pid is None and g.user is None:
         return [], []
@@ -159,6 +159,11 @@ def dot_product_rank(pid=None):
         search_embed = user_data[session['user']]
     else:
         search_embed = x[pids.index(pid)]
+
+    if do_time_filter:
+        pids, x = time_filter(pids, x, do_time_filter)  # Use embeds as "scores" to filter with aligned paper ids
+    if do_have_filter == 'yes':
+        pids, x = have_filter(pids, x)  # use embeds as scores again
     paper_orders = get_recommendations_embed(x, search_embed)
     papers = []
     scores = []
@@ -201,6 +206,32 @@ def default_context():
     return context
 
 
+def time_filter(paper_ids, paper_scores, opt_time_filter):
+    mdb = get_metas()
+    kv = {k: v for k, v in mdb.items()}  # read all of metas to memory at once, for efficiency
+    tnow = time.time()
+    deltat = int(opt_time_filter) * 60 * 60 * 24  # allowed time delta in seconds
+    keep = [i for i, pid in enumerate(paper_ids) if (tnow - kv[pid]['_time']) < deltat]
+    pids = [paper_ids[i] for i in keep]
+    scores = None
+    if paper_scores:
+        scores = [paper_scores[i] for i in keep]
+    return pids, scores
+
+
+def have_filter(paper_ids, paper_scores):
+    tags = get_tags()
+    have = set().union(*tags.values())
+    seen = list(set(get_seen()))
+    seen.extend(have)
+    keep = [i for i, pid in enumerate(paper_ids) if pid not in seen]
+    pids = [paper_ids[i] for i in keep]
+    scores = None
+    if paper_scores:
+        scores = [paper_scores[i] for i in keep]
+    return pids, scores
+
+
 @app.route('/', methods=['GET'])
 def main():
     # default settings
@@ -227,33 +258,22 @@ def main():
     if opt_rank == 'search':
         pids, scores = search_rank(q=opt_q)
     elif opt_rank == 'pid':
-        pids, scores = dot_product_rank(pid=opt_pid)
+        pids, scores = dot_product_rank(pid=opt_pid, do_time_filter=opt_time_filter, do_have_filter=opt_skip_have)
     elif opt_rank == 'time':
         pids, scores = time_rank()
     elif opt_rank == 'random':
         pids, scores = random_rank()
     elif opt_rank == 'embed':
-        pids, scores = dot_product_rank()
+        pids, scores = dot_product_rank(do_time_filter=opt_time_filter, do_have_filter=opt_skip_have)
     else:
         raise ValueError("opt_rank %s is not a thing" % (opt_rank,))
 
-    # filter by time
-    if opt_time_filter:
-        mdb = get_metas()
-        kv = {k: v for k, v in mdb.items()}  # read all of metas to memory at once, for efficiency
-        tnow = time.time()
-        deltat = int(opt_time_filter) * 60 * 60 * 24  # allowed time delta in seconds
-        keep = [i for i, pid in enumerate(pids) if (tnow - kv[pid]['_time']) < deltat]
-        pids, scores = [pids[i] for i in keep], [scores[i] for i in keep]
-
-    # optionally hide papers we already have
-    if opt_skip_have == 'yes':
-        tags = get_tags()
-        have = set().union(*tags.values())
-        seen = list(set(get_seen()))
-        seen.extend(have)
-        keep = [i for i, pid in enumerate(pids) if pid not in seen]
-        pids, scores = [pids[i] for i in keep], [scores[i] for i in keep]
+    # filter by time and skip papers we have, if we didn't already do that
+    if opt_rank not in ['pid', 'embed']:
+        if opt_time_filter:
+            pids, scores = time_filter(pids, scores, opt_time_filter)
+        if opt_skip_have == 'yes':
+            pids, scores = have_filter(pids, scores)
 
     # crop the number of results to RET_NUM, and paginate
     try:
