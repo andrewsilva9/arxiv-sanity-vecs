@@ -15,7 +15,7 @@ import random
 import argparse
 
 import numpy as np
-from sklearn import svm
+# from sklearn import svm
 
 import sendgrid
 from sendgrid.helpers.mail import Email, To, Content, Mail
@@ -94,37 +94,37 @@ def calculate_recommendation(
 
     # loop over all the tags
     all_pids, all_scores = {}, {}
-    for tag, pids in tags.items():
+    # for tag, pids in tags.items():
 
-        if len(pids) == 0:
-            continue
+        # if len(pids) == 0:
+            # continue
 
         # construct the positive set for this tag
-        y = np.zeros(n, dtype=np.float32)
-        for pid in pids:
-            y[ptoi[pid]] = 1.0
+        # y = np.zeros(n, dtype=np.float32)
+        # for pid in pids:
+            # y[ptoi[pid]] = 1.0
 
         # classify
-        clf = svm.LinearSVC(class_weight='balanced', verbose=False, max_iter=10000, tol=1e-6, C=0.01)
-        clf.fit(x, y)
-        s = clf.decision_function(x)
-        sortix = np.argsort(-s)
-        pids = [itop[ix] for ix in sortix]
-        scores = [100*float(s[ix]) for ix in sortix]
+        # clf = svm.LinearSVC(class_weight='balanced', verbose=False, max_iter=10000, tol=1e-6, C=0.01)
+        # clf.fit(x, y)
+        # s = clf.decision_function(x)
+        # sortix = np.argsort(-s)
+        # pids = [itop[ix] for ix in sortix]
+        # scores = [100*float(s[ix]) for ix in sortix]
 
         # filter by time to only recent papers
-        deltat = time_delta*60*60*24 # allowed time delta in seconds
-        keep = [i for i,pid in enumerate(pids) if (tnow - metas[pid]['_time']) < deltat]
-        pids, scores = [pids[i] for i in keep], [scores[i] for i in keep]
+        # deltat = time_delta*60*60*24 # allowed time delta in seconds
+        # keep = [i for i,pid in enumerate(pids) if (tnow - metas[pid]['_time']) < deltat]
+        # pids, scores = [pids[i] for i in keep], [scores[i] for i in keep]
 
         # finally exclude the papers we already have tagged
-        have = set().union(*tags.values())
-        keep = [i for i,pid in enumerate(pids) if pid not in have]
-        pids, scores = [pids[i] for i in keep], [scores[i] for i in keep]
+        # have = set().union(*tags.values())
+        # keep = [i for i,pid in enumerate(pids) if pid not in have]
+        # pids, scores = [pids[i] for i in keep], [scores[i] for i in keep]
 
         # store results
-        all_pids[tag] = pids
-        all_scores[tag] = scores
+        # all_pids[tag] = pids
+        # all_scores[tag] = scores
 
 
     return all_pids, all_scores

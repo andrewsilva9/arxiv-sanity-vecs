@@ -7,7 +7,7 @@ from random import shuffle
 from datetime import datetime
 
 import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer
+# from sklearn.feature_extraction.text import TfidfVectorizer
 
 from aslite.db import get_papers_db, save_features
 
@@ -57,13 +57,13 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(args)
 
-    v = TfidfVectorizer(input='content',
-                        encoding='utf-8', decode_error='replace', strip_accents='unicode',
-                        lowercase=True, analyzer='word', stop_words='english',
-                        token_pattern=r'(?u)\b[a-zA-Z_][a-zA-Z0-9_]+\b',
-                        ngram_range=(1, 2), max_features=args.num,
-                        norm='l2', use_idf=True, smooth_idf=True, sublinear_tf=True,
-                        max_df=args.max_df, min_df=args.min_df)
+    # v = TfidfVectorizer(input='content',
+    #                     encoding='utf-8', decode_error='replace', strip_accents='unicode',
+    #                     lowercase=True, analyzer='word', stop_words='english',
+    #                     token_pattern=r'(?u)\b[a-zA-Z_][a-zA-Z0-9_]+\b',
+    #                     ngram_range=(1, 2), max_features=args.num,
+    #                     norm='l2', use_idf=True, smooth_idf=True, sublinear_tf=True,
+    #                     max_df=args.max_df, min_df=args.min_df)
 
     pdb = get_papers_db(flag='r')
 
@@ -89,17 +89,17 @@ if __name__ == '__main__':
 
 
     print("training tfidf vectors...")
-    v.fit(make_corpus(training=True))
+    # v.fit(make_corpus(training=True))
 
     print("running inference...")
-    x = v.transform(make_corpus(training=False)).astype(np.float32)
-    print(x.shape)
+    # x = v.transform(make_corpus(training=False)).astype(np.float32)
+    # print(x.shape)
 
     print("saving to features to disk...")
-    features = {
-        'pids': list(pdb.keys()),
-        'x': x,
-        'vocab': v.vocabulary_,
-        'idf': v._tfidf.idf_,
-    }
-    save_features(features)
+    # features = {
+        # 'pids': list(pdb.keys()),
+        # 'x': x,
+        # 'vocab': v.vocabulary_,
+        # 'idf': v._tfidf.idf_,
+    # }
+    # save_features(features)
