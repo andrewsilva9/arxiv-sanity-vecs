@@ -1,0 +1,26 @@
+#!/bin/bash
+source /Users/andrewsilva/.virtualenvs/flaskpy3/bin/activate
+
+cd /Users/andrewsilva/Projects/research/code/tinkerings/arxiv-sanity-vecs/
+
+python3 arxiv_daemon.py --num 20000
+
+python3 seq_embeddings.py
+rsync data/paper_embeds.p root@172.105.155.181:arxiv-sanity-vecs/data/paper_embeds.p
+rsync data/sentence_features.pt root@172.105.155.181:arxiv-sanity-vecs/data/sentence_features.pt
+rsync data/papers.db root@172.105.155.181:arxiv-sanity-vecs/data/papers.db
+
+# if [ $? -eq 0 ]; then
+# #    echo "New papers detected! Running compute.py"
+# #    python3 compute.py
+#      echo "New papers detected! Running sequence embedder."
+#      python3 seq_embeddings.py
+#      rsync data/paper_embeds.p root@172.105.155.181:arxiv-sanity-vecs/data/paper_embeds.p
+#      rsync data/sentence_features.pt root@172.105.155.181:arxiv-sanity-vecs/data/sentence_features.pt
+#      rsync data/papers.db root@172.105.155.181:arxiv-sanity-vecs/data/papers.db
+# else
+#     echo "No new papers were added, skipping feature computation"
+# fi
+
+rm we_did_it.txt
+touch we_did_it.txt
