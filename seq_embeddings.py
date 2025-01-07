@@ -12,15 +12,14 @@ import argparse
 from datetime import datetime
 
 from aslite.db import get_papers_db, load_users, save_embeddings, load_embeddings, EMBEDDINGS_FILE, safe_pickle_dump
-
+from config import HF_ACCESS_TOKEN
 
 # constants
 model_id = "sentence-transformers/all-mpnet-base-v2"
 # model_id = "sentence-transformers/all-MiniLM-L12-v2"
-hf_token = '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'
 
 api_url = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{model_id}"
-headers = {"Authorization": f"Bearer {hf_token}"}
+headers = {"Authorization": f"Bearer {HF_ACCESS_TOKEN}"}
 LOCAL = True
 model = SentenceTransformer('all-mpnet-base-v2')
 
