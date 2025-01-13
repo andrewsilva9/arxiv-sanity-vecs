@@ -4,7 +4,7 @@ source ~/.virtualenvs/flaskpy3/bin/activate
 cd ~/arxiv-sanity-vecs/
 
 # Run the paper retriever
-python3 arxiv_daemon.py --num 20000
+python3 arxiv_daemon.py --num 2000
 
 python3 seq_embeddings.py
 

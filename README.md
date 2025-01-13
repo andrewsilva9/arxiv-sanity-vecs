@@ -8,7 +8,8 @@ Then, each day when new papers are pulled in, we can recommend papers to you bas
 
 ![Screenshot](screenshot.png)
 
-You can also export or import embeddings, so if you want to jumpstart your recommendations with a pre-trained embedding from a friend, just import their embedding on your profile!
+You can also export or import embeddings, so if you want to jumpstart your recommendations with a pre-trained embedding from a friend, just import their embedding on your profile! 
+I've included an `example_embedding.pkl` in the `data/` directory, which should warm-start your embedding with some LLM/personalization papers.
 
 ## Requirements
 You may need to obtain a Huggingface Access Token and set it inside of `config.py`.
@@ -47,7 +48,7 @@ source ~/.virtualenvs/flaskpy3/bin/activate
 
 cd ~/arxiv-sanity-vecs/
 
-python3 arxiv_daemon.py --num 20000
+python3 arxiv_daemon.py --num 2000
 
 if [ $? -eq 0 ]; then
     echo "New papers detected! Running compute.py"
