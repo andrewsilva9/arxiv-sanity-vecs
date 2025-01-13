@@ -45,7 +45,7 @@ nvidia-nvtx-cu11==11.7.91
 openai==0.27.10
 packaging==23.2
 pandas==2.0.3
-Pillow==9.5.0
+Pillow==10.3.0
 pyarrow==14.0.1
 pyparsing==3.0.9
 python-dateutil==2.8.2
