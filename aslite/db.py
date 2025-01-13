@@ -5,9 +5,12 @@ Any of the file system I/O and the associated settings are in this single file.
 """
 
 import os
-import sqlite3, zlib, pickle, tempfile
-from sqlitedict import SqliteDict
+import pickle
+import sqlite3
+import tempfile
+import zlib
 from contextlib import contextmanager
+from sqlitedict import SqliteDict
 
 # -----------------------------------------------------------------------------
 # global configuration
@@ -181,3 +184,23 @@ def load_embeddings():
 
 def save_embeddings(embedding_dict):
     safe_pickle_dump(embedding_dict, EMBEDDINGS_FILE)
+
+
+def export_user_embedding(username):
+    """
+    Exports the embedding of a given user as a dictionary serialized into a pickle file.
+    """
+    embeddings = load_embeddings()
+    if username not in embeddings:
+        raise ValueError(f"No embedding found for user {username}")
+    embedding = embeddings[username]
+    return embedding
+
+
+def import_user_embedding(username, embedding):
+    """
+    Imports a new embedding for a given user. Replaces the user's embedding.
+    """
+    embeddings = load_embeddings()
+    embeddings[username] = embedding
+    save_embeddings(embeddings)

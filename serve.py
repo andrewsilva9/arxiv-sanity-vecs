@@ -468,65 +468,6 @@ def move_for_embed(pid, move_away: bool = False):
     return "ok"
 
 
-@app.route('/sub/<pid>/<tag>')
-def sub(pid=None, tag=None):
-    if g.user is None:
-        return "error, not logged in"
-
-    with get_tags_db(flag='c') as tags_db:
-
-        # if the user doesn't have any tags, there is nothing to do
-        if not g.user in tags_db:
-            return "user has no library of tags ¯\_(ツ)_/¯"
-
-        # fetch the user library object
-        d = tags_db[g.user]
-
-        # add the paper to the tag
-        if tag not in d:
-            return "user doesn't have the tag %s" % (tag,)
-        else:
-            if pid in d[tag]:
-
-                # remove this pid from the tag
-                d[tag].remove(pid)
-
-                # if this was the last paper in this tag, also delete the tag
-                if len(d[tag]) == 0:
-                    del d[tag]
-
-                # write back the resulting dict to database
-                tags_db[g.user] = d
-                return "ok removed pid %s from tag %s" % (pid, tag)
-            else:
-                return "user doesn't have paper %s in tag %s" % (pid, tag)
-
-
-@app.route('/del/<tag>')
-def delete_tag(tag=None):
-    if g.user is None:
-        return "error, not logged in"
-
-    with get_tags_db(flag='c') as tags_db:
-
-        if g.user not in tags_db:
-            return "user does not have a library"
-
-        d = tags_db[g.user]
-
-        if tag not in d:
-            return "user does not have this tag"
-
-        # delete the tag
-        del d[tag]
-
-        # write back to database
-        tags_db[g.user] = d
-
-    print("deleted tag %s for user %s" % (tag, g.user))
-    return "ok: " + str(d)  # return back the user library for debugging atm
-
-
 # -----------------------------------------------------------------------------
 # endpoints to log in and out
 
@@ -566,3 +507,50 @@ def register_email():
                 edb[g.user] = email
 
     return redirect(url_for('profile'))
+
+
+@app.route('/export_embedding', methods=['GET'])
+def export_embedding():
+    if g.user is None:
+        return "error, not logged in", 403
+
+    try:
+        user_data = load_users()
+        user_embed = user_data[session['user']]
+        data = pickle.dumps(user_embed)
+        response = app.response_class(
+            response=data,
+            status=200,
+            mimetype='application/octet-stream'
+        )
+        response.headers["Content-Disposition"] = f"attachment; filename={g.user}_embedding.pkl"
+        return response
+    except Exception as e:
+        return f"error: {str(e)}", 500
+
+
+@app.route('/import_embedding', methods=['POST'])
+def import_embedding():
+    if g.user is None:
+        return "error, not logged in", 403
+
+    if 'file' not in request.files:
+        return "error, no file uploaded", 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return "error, empty file name", 400
+
+    try:
+        # Deserialize the uploaded file
+        embedding = pickle.load(file)
+        user_data = load_users()
+        user_embed = user_data[session['user']]
+        assert embedding.shape == user_embed.shape, "Shape mismatch in new embedding"
+        user_data[session['user']] = embedding
+        save_users(user_data)
+        with get_seen_db(flag='c') as seen_db:
+            seen_db[g.user] = {'liked': [], 'disliked': []}
+        return "Success! Embedding imported, all \"Liked\" and \"Disliked\" papers have been reset.", 200
+    except Exception as e:
+        return f"error: {str(e)}", 500

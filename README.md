@@ -8,12 +8,39 @@ Then, each day when new papers are pulled in, we can recommend papers to you bas
 
 ![Screenshot](screenshot.png)
 
-#### To run
+You can also export or import embeddings, so if you want to jumpstart your recommendations with a pre-trained embedding from a friend, just import their embedding on your profile!
 
-First, you need to obtain a Huggingface Access Token and set it inside of `config.py`.
+## Requirements
+You may need to obtain a Huggingface Access Token and set it inside of `config.py`.
+ Install via requirements:
 
-Then, to run this locally I usually run the following script to update the database with any new papers. 
-I typically schedule this via a periodic cron job:
+ ```bash
+ pip install -r requirements.txt
+ ```
+
+## To run daily:
+To run this script every day from 8-11AM (so you can sit down and view it at http://127.0.0.1:5000/ each morning):
+
+First, set the daily process script to executable:
+```bash
+chmod +x daily_process.sh
+```
+
+Then, assuming you're on Ubuntu, open your crontab editor:
+```bash
+crontab -e
+```
+ and set the script to run daily at 8AM by adding the following line:
+```bash
+0 8 * * * /home/<username>/arxiv-sanity-vecs/daily_process.sh
+```
+
+Now you should be able to view the site at http://127.0.0.1:5000/ each day from 8-11AM.
+
+## To run
+
+To run this locally I usually run the following script to update the database with any new papers. 
+Assuming you have a virtualenv called `flaskpy3`, you can typically schedule this via a periodic cron job:
 ```bash
 #!/bin/bash
 source ~/.virtualenvs/flaskpy3/bin/activate
@@ -41,19 +68,12 @@ All of the data will be stored inside the `data` directory. Finally, if you'd li
 To run this on Linode, you need to compute embeddings _locally_, and then push the embeddings/databases up to Linode.
 This is because the CPU constraints on the cheapest boxes are too severe to run personalized updates/sentence transformers.
 
-#### Requirements
 
- Install via requirements:
-
- ```bash
- pip install -r requirements.txt
- ```
-
-#### Credits
+## Credits
 
 Of course, enormous credit to Andrej's [arxiv-sanity-lite](https://github.com/karpathy/arxiv-sanity-lite), which serves as the basis for all of the Flask work here. 
 And to [Huggingface](https://huggingface.co) for sentence-transformers and some strong free models.
 
-#### License
+## License
 
 MIT

@@ -12,7 +12,27 @@
             <div><b>Current session</b></div>
             <div>Logged in user: {{ user }}</div>
         </div>
+        <h3>Export and Import Embedding</h3>
+
+        <!-- Export Button -->
+        <a href="/export_embedding" class="btn btn-primary">Download your paper recommendation embedding</a>
+
         <br>
+        <br>
+
+        <!-- Import Form -->
+        <form id="import-embedding-form" enctype="multipart/form-data">
+            <label for="file">Upload Embedding:</label>
+            <input type="file" id="import-embedding-file" name="file" required>
+            <button type="button" id="import-embedding-btn" class="btn btn-success">Import Embedding</button>
+        </form>
+
+        <br>
+        <div id="embedding-feedback" class="alert" style="display: none;"></div>
+
+        <br>
+        <!-- Old email HTML -->
+        <!--
         <div>
             <div><b>Email recommendations</b></div>
             <div>
@@ -30,6 +50,7 @@
                 </form>
             </div>
         </div>
+        -->
         <br>
         <div>
             <a href="{{ url_for('logout') }}">Log out</a>
@@ -64,4 +85,43 @@
 {% endblock %}
 
 {% block elements %}
+<script>
+
+    // Handle import embedding
+    document.getElementById('import-embedding-btn').addEventListener('click', function() {
+        const fileInput = document.getElementById('import-embedding-file');
+        if (!fileInput.files[0]) {
+            showFeedback('Please select a file to upload.', 'alert-danger');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        fetch('/import_embedding', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to import embedding');
+                return response.text();
+            })
+            .then(message => {
+                showFeedback(message, 'alert-success');
+            })
+            .catch(error => {
+                showFeedback(`Error importing embedding: ${error.message}`, 'alert-danger');
+            });
+    });
+
+    function showFeedback(message, alertClass) {
+        const feedbackDiv = document.getElementById('embedding-feedback');
+        feedbackDiv.className = `alert ${alertClass}`;
+        feedbackDiv.textContent = message;
+        feedbackDiv.style.display = 'block';
+        setTimeout(() => {
+            feedbackDiv.style.display = 'none';
+        }, 5000); // Hide after 5 seconds
+    }
+</script>
 {% endblock %}
