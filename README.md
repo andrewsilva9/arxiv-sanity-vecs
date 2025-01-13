@@ -47,7 +47,7 @@ source ~/.virtualenvs/flaskpy3/bin/activate
 
 cd ~/arxiv-sanity-vecs/
 
-python3 arxiv_daemon.py --num 20000
+python3 arxiv_daemon.py --num 2000
 
 if [ $? -eq 0 ]; then
     echo "New papers detected! Running compute.py"
