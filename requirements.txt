@@ -46,7 +46,7 @@ openai==0.27.10
 packaging==23.2
 pandas==2.0.3
 Pillow==9.5.0
-pyarrow==12.0.1
+pyarrow==14.0.1
 pyparsing==3.0.9
 python-dateutil==2.8.2
 pytz==2023.4
