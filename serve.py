@@ -51,7 +51,7 @@ def get_tags():
     if g.user is None:
         return {}
     if not hasattr(g, '_tags'):
-        with get_tags_db() as tags_db:
+        with get_tags_db(flag='c') as tags_db:
             tags_dict = tags_db[g.user] if g.user in tags_db else {}
         g._tags = tags_dict
     return g._tags
@@ -62,7 +62,7 @@ def get_seen(dict_back=False):
         if dict_back:
             return {'liked': [], 'disliked': []}
         return []
-    with get_seen_db() as seen_db:
+    with get_seen_db(flag='c') as seen_db:
         seen_papers = seen_db[g.user] if g.user in seen_db else {'liked': [], 'disliked': []}
     if dict_back:
         return seen_papers
@@ -72,13 +72,13 @@ def get_seen(dict_back=False):
 
 def get_papers():
     if not hasattr(g, '_pdb'):
-        g._pdb = get_papers_db()
+        g._pdb = get_papers_db(flag='c')
     return g._pdb
 
 
 def get_metas():
     if not hasattr(g, '_mdb'):
-        g._mdb = get_metas_db()
+        g._mdb = get_metas_db(flag='c')
     return g._mdb
 
 
@@ -351,7 +351,7 @@ def inspect():
 @app.route('/profile')
 def profile():
     context = default_context()
-    with get_email_db() as edb:
+    with get_email_db(flag='c') as edb:
         email = edb.get(g.user, '')
         context['email'] = email
     return render_template('profile.html', **context)

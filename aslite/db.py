@@ -17,6 +17,10 @@ from sqlitedict import SqliteDict
 
 DATA_DIR = 'data'
 
+# ensure data directory exists
+if not os.path.exists(DATA_DIR):
+    os.makedirs(DATA_DIR)
+
 # -----------------------------------------------------------------------------
 # utilities for safe writing of a pickle file
 
